@@ -95,20 +95,33 @@ function updateQuestion(id: string, prompt: string,expectedAnswer: string){
      const trimmedPrompt = prompt.trim();
     const trimmedAnswer = expectedAnswer.trim();
 
-      setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === id
-          ? {
-              ...q,
-              prompt: trimmedPrompt || q.prompt,
-              expectedAnswer: trimmedAnswer || q.expectedAnswer,
-            }
-          : q,
-      ),
-    );
-  
-}
+      setQuestion(prev =>
+        prev.map(question => {
+            if (question.id !== id) return question;
 
-function deleteQuestions(id: string){
-    setQuestion((prev) => prev.filter((question) => question.id !== id));
+            const prompt = trimmedPrompt || question.prompt;
+            const expectedAnswer = trimmedAnswer || question.expectedAnswer;
+            //the ... let use the question to updated without droping the rest
+            return { ...question, prompt, expectedAnswer };
+        })
+        );}
+/**(
+ * deleteQuestions removes the questions from the bank using the id
+) */
+function deleteQuestion(id: string) {
+  setQuestion(previous =>
+    previous.filter(question => question.id !== id)
+  );
+}
+function clearAll(){
+    setQuestion(createEmptyState());
+}
+return {
+    questions,
+    isLoaded,
+    addQuestion,
+    updateQuestion,
+    deleteQuestion,
+    clearAll,
+};
 }
