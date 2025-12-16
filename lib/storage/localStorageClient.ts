@@ -13,22 +13,21 @@ const isBrowser = typeof window !== "undefined";
  * -NOT KEY = FALLBACK
  * avoids try and catchs repetition
  */
-export function loadFromLocalStorage<T>(key:string , fallback:T){
-    if(!isBrowser) {
+export function loadFromLocalStorage<T>(key: string, fallback: T): T {
+    if (!isBrowser) {
         return fallback;
     }
-    try{
+    try {
         const rawValue = window.localStorage.getItem(key);
-        if(rawValue === null){
-            return fallback + "hey";
+        if (rawValue === null) {
+            return fallback;
         }
-    
-    return JSON.parse(rawValue) as T;}
-    catch(error){
+        return JSON.parse(rawValue) as T;
+    } catch (error) {
         console.warn(`[localstorage] failed to load the key = "${key}", returning fallback `, error);
-    };
+    }
     return fallback;
- }
+}
 /**
  * saveToLocalStorage make the provided value to string and save it under a key
  *  -IF:
