@@ -1,0 +1,11 @@
+// lib/storage/storageKeys.ts
+
+/**
+ * Centralized keys 
+    Helpful to migrate data
+*/
+
+export const storageKeys = {
+    manualQuestionBank: "manualQuestionBank_v1",
+    activeTestSession: "activeTestSession_v1"
+} as const;
