@@ -30,7 +30,7 @@ export interface TestSession{
      * Map the question id 
      * stored as raw input
      */
-    answersByQuestios: Record<string,string>;
+    answersByQuestions: Record<string,string>;
     /**
      * Pointer to the current question index
      */
