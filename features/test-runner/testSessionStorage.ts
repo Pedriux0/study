@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useRouter } from "next/router";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/lib/storage/localStorageClient";
 import { storageKeys } from "@/lib/storage/storageKeys";
 import type { TestSession } from "@/types/testSession";
@@ -40,4 +41,11 @@ export function getActiveTestSession():TestSession |null{
  */
 export function clearActiveTestSession(): void{
     saveToLocalStorage(storageKeys.activeTestSession, null)
+}
+/**
+ * setActiveTestSession stoys in the localStorage
+ * called when to start or update 
+ */
+export function setActiveTestSession(session: TestSession){
+    saveToLocalStorage(storageKeys.activeTestSession,session);
 }
