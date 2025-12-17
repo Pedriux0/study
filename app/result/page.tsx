@@ -64,22 +64,22 @@ export default function ResultsPage() {
    * - Stable ordering based on session.questionIds
    * - Graceful handling if a question is missing from the bank
    */
-  const reviewItems = useMemo(() => {
-    if (!session) return [];
+const reviewItems = useMemo(() => {
+  if (!session) return [];
 
-    return session.questionsIds.map((id) => {
-      const question = questionById.get(id) ?? null;
-      const userAnswer = session.answersByQuestions[id] ?? "";
+  return session.questionsIds.map((id) => {
+    const question = questionById.get(id);
+    const { prompt = "Question not found in BANK", expectedAnswer = "Expected answer not there" } = question ?? {};
 
-      return {
-        id,
-        prompt: question?.prompt ?? "(Question not found in manual bank)",
-        expectedAnswer: question?.expectedAnswer ?? "(Expected answer not available)",
-        userAnswer,
-        isMissingQuestion: question === null,
-      };
-    });
-  }, [session, questionById]);
+    return {
+      id,
+      prompt,
+      expectedAnswer,
+      userAnswer: session.answersByQuestions[id] ?? "",
+      isMissingQuestion: !question,
+    };
+  });
+}, [session, questionById]);
 
   /**
    * KPI calculations:
@@ -97,7 +97,7 @@ export default function ResultsPage() {
 
     const total = session.questionsIds.length;
 
-    // "Answered" means the user typed something non-empty (after trimming).
+    // means the user typed something non-empty 
     const answered = session.questionsIds.reduce((count, id) => {
       const val = (session.answersByQuestions[id] ?? "").trim();
       return val.length > 0 ? count + 1 : count;
