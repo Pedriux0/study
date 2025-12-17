@@ -2,7 +2,6 @@
 
 "use client";
 
-import { useRouter } from "next/router";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/lib/storage/localStorageClient";
 import { storageKeys } from "@/lib/storage/storageKeys";
 import type { TestSession } from "@/types/testSession";
@@ -25,7 +24,7 @@ export function buildManualTestSession(questionsIds:string[]) : TestSession{
         answersByQuestions: {},
         currentIndex: 0,
         startedAtIso: new Date().toISOString(),
-        finishedAtIso:"manual",
+        finishedAtIso:"",
     };
     }
     /**

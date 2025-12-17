@@ -1,9 +1,11 @@
 // app\study\manual\page.tsx
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent,
+    useState } from "react";
 import { useManualQuestionBank } from "@/features/manual-questions/useManualQuestionBank";
-
+import {useRouter} from "next/navigation";
+import { buildManualTestSession, setActiveTestSession } from "@/features/test-runner/testSessionStorage";
 /**
  *
  * ManualStudyPage is the main point for the manual mode
@@ -15,6 +17,15 @@ import { useManualQuestionBank } from "@/features/manual-questions/useManualQues
  */
 
 export default function ManualStudyPage() {
+    const router = useRouter();
+
+    function handleStartTest(){
+        if(questions.length === 0) return;
+        const questionsIds = questions.map((q)=> q.id);
+        const session = buildManualTestSession(questionsIds);
+        setActiveTestSession(session);
+        router.push("/test")
+    }
     const { questions, isLoaded, addQuestion, updateQuestion, deleteQuestion, clearAll } =
         useManualQuestionBank();
 
@@ -114,7 +125,15 @@ export default function ManualStudyPage() {
                             These question are local you can edit or delete them
                         </p>
                     </div>
-
+                    <div className="flex items-center gap-6"
+                    >
+                        {questions.length >0 &&(
+                            <button 
+                            type = "button"
+                            onClick={handleStartTest}
+                            className="rounded-md bg-emerald-600 px-2 py-2 text-sm">Start Test</button>
+                        )}
+                    </div>
                     {questions.length >0 &&(
                         <button
                         type= "button"
