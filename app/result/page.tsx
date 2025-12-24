@@ -83,7 +83,6 @@ const reviewItems = useMemo(() => {
 
   /**
    * KPI calculations:
-   * We keep these intentionally simple for the MVP.
    */
   const kpis = useMemo(() => {
     if (!session) {
