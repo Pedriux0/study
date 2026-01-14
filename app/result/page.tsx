@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { loadFromLocalStorage } from "@/lib/storage/localStorageClient";
 import { storageKeys } from "@/lib/storage/storageKeys";
+import { evaluateAnswer } from "@/lib/text/evaluateAnswer";
 
 import {
   buildManualTestSession,
@@ -19,16 +20,18 @@ import type { Question } from "@/types/question";
 import type { TestSession } from "@/types/testSession";
 
 /**
- * ResultsPage is the view of a test run.
+ * ResultsPage is the "close-out" view of a test run.
  *
+ * MVP scope:
  * - Read finished session from localStorage
- * - Compute simple KPIs (answered count, completion %, timestamps)
+ * - Compute KPIs (answered/unanswered + correct/incorrect + accuracy)
  * - Show per-question review (prompt + expected + user answer)
+ * - Provide CTAs to retake or clear the session
  *
- * Not in scope yet:
- * - Similarity scoring / correctness logic
- * - Keyword extraction
- * - Search links
+ * Notes:
+ * - This page does NOT store anything on the server.
+ * - All personal answers remain in the browser.
+ * - Scoring is based on normalization + Levenshtein similarity (no AI yet).
  */
 export default function ResultsPage() {
   const router = useRouter();
@@ -38,20 +41,23 @@ export default function ResultsPage() {
 
   /**
    * Initial load:
-   * - Fetch active session (should be finished)
-   * - Fetch manual bank to resolve question IDs to full question content
+   * - Fetch active session (should be finished by /test)
+   * - Fetch manual bank to resolve question IDs to actual question content
    */
   useEffect(() => {
     const active = getActiveTestSession();
     setSession(active);
 
-    const bank = loadFromLocalStorage<Question[]>(storageKeys.manualQuestionBank, []);
+    const bank = loadFromLocalStorage<Question[]>(
+      storageKeys.manualQuestionBank,
+      [],
+    );
     setManualBank(bank);
   }, []);
 
   /**
-   * Create fast lookup table for questions by ID.
-   * This keeps the render layer clean and avoids repeated array scanning.
+   * Build a quick lookup table for questions by ID.
+   * This prevents repeated scanning of arrays during rendering.
    */
   const questionById = useMemo(() => {
     const map = new Map<string, Question>();
@@ -60,29 +66,46 @@ export default function ResultsPage() {
   }, [manualBank]);
 
   /**
-   * Build a normalized review list
+   * Build a normalized "review list" for the UI:
    * - Stable ordering based on session.questionIds
-   * - Graceful handling if a question is missing from the bank
+   * - Includes evaluation status + similarity percent
+   * - Handles missing questions gracefully
    */
-const reviewItems = useMemo(() => {
-  if (!session) return [];
+  const reviewItems = useMemo(() => {
+    if (!session) return [];
 
-  return session.questionsIds.map((id) => {
-    const question = questionById.get(id);
-    const { prompt = "Question not found in BANK", expectedAnswer = "Expected answer not there" } = question ?? {};
+    return session.questionsIds.map((id) => {
+      const question = questionById.get(id) ?? null;
+      const userAnswer = session.answersByQuestions[id] ?? "";
 
-    return {
-      id,
-      prompt,
-      expectedAnswer,
-      userAnswer: session.answersByQuestions[id] ?? "",
-      isMissingQuestion: !question,
-    };
-  });
-}, [session, questionById]);
+      const expectedAnswer = question?.expectedAnswer ?? "";
+      const evaluation =
+        question?.expectedAnswer
+          ? evaluateAnswer(userAnswer, expectedAnswer)
+          : {
+              status: "UNANSWERED" as const,
+              similarity: 0,
+              normalizedUserAnswer: "",
+              normalizedExpectedAnswer: "",
+            };
+
+      return {
+        id,
+        prompt: question?.prompt ?? "(Question not found in manual bank)",
+        expectedAnswer:
+          question?.expectedAnswer ?? "(Expected answer not available)",
+        userAnswer,
+        evaluation,
+        isMissingQuestion: question === null,
+      };
+    });
+  }, [session, questionById]);
 
   /**
    * KPI calculations:
+   * - Answered/unanswered
+   * - Correct/incorrect (only for answered items)
+   * - Accuracy (correct / answered)
    */
   const kpis = useMemo(() => {
     if (!session) {
@@ -90,35 +113,69 @@ const reviewItems = useMemo(() => {
         total: 0,
         answered: 0,
         unanswered: 0,
+        correct: 0,
+        incorrect: 0,
         completionPercent: 0,
+        accuracyPercent: 0,
       };
     }
 
     const total = session.questionsIds.length;
 
-    // means the user typed something non-empty 
-    const answered = session.questionsIds.reduce((count, id) => {
-      const val = (session.answersByQuestions[id] ?? "").trim();
-      return val.length > 0 ? count + 1 : count;
-    }, 0);
+    let answered = 0;
+    let unanswered = 0;
+    let correct = 0;
+    let incorrect = 0;
 
-    const unanswered = Math.max(total - answered, 0);
+    for (const id of session.questionsIds) {
+      const question = questionById.get(id);
+      const userAnswer = session.answersByQuestions[id] ?? "";
 
-    const completionPercent =
-      total === 0 ? 0 : Math.round((answered / total) * 100);
+      // If we cannot resolve the expected answer, we cannot score it reliably.
+      // We treat it as unanswered for KPI purposes.
+      if (!question?.expectedAnswer) {
+        unanswered += 1;
+        continue;
+      }
 
-    return { total, answered, unanswered, completionPercent };
-  }, [session]);
+      const result = evaluateAnswer(userAnswer, question.expectedAnswer);
+
+      if (result.status === "UNANSWERED") {
+        unanswered += 1;
+      } else {
+        answered += 1;
+
+        if (result.status === "CORRECT") correct += 1;
+        if (result.status === "INCORRECT") incorrect += 1;
+      }
+    }
+
+    // Completion is based on answered/total (simple MVP metric).
+    const completionPercent = total === 0 ? 0 : Math.round((answered / total) * 100);
+
+    // Accuracy is based on correct/answered (common testing metric).
+    const accuracyPercent =
+      answered === 0 ? 0 : Math.round((correct / answered) * 100);
+
+    return {
+      total,
+      answered,
+      unanswered,
+      correct,
+      incorrect,
+      completionPercent,
+      accuracyPercent,
+    };
+  }, [session, questionById]);
 
   /**
-   * handleRetake starts a fresh session with the same question ordering.
-   * - Keeps the experience predictable for the user
-   * - Resets answers and progress
+   * handleRetake starts a fresh session using the same question ordering.
+   * This keeps retakes predictable and easy to compare.
    */
   function handleRetake() {
     if (!session) return;
 
-    // In FUTURE can branch by session.source.
+    // MVP: retake supported for manual sessions.
     const newSession = buildManualTestSession(session.questionsIds);
     setActiveTestSession(newSession);
     router.push("/test");
@@ -127,7 +184,7 @@ const reviewItems = useMemo(() => {
   /**
    * handleClearSession provides a clean reset:
    * - Removes the active session from localStorage
-   * - Sends user back to manual mode
+   * - Sends the user back to manual mode
    */
   function handleClearSession() {
     clearActiveTestSession();
@@ -136,7 +193,8 @@ const reviewItems = useMemo(() => {
 
   /**
    * Guard rails:
-   * If there is no session keep UX safe and explicit.
+   * - If there is no session, show clear guidance
+   * - If not finished yet, offer to return to /test
    */
   if (!session) {
     return (
@@ -179,6 +237,8 @@ const reviewItems = useMemo(() => {
       </div>
     );
   }
+
+  // We keep timestamps as ISO strings (no formatting dependency in MVP).
   const startedAt = session.startedAtIso;
   const finishedAt = session.finishedAtIso;
 
@@ -188,8 +248,8 @@ const reviewItems = useMemo(() => {
       <section className="space-y-2">
         <h1 className="text-2xl font-semibold">Results</h1>
         <p className="text-sm text-slate-300 max-w-2xl">
-          This is a run summary generated locally in your browser. No personal answers
-          are stored on the server.
+          This summary is generated locally in your browser. No personal answers are
+          stored on the server.
         </p>
       </section>
 
@@ -228,12 +288,14 @@ const reviewItems = useMemo(() => {
           </div>
         </div>
 
-        {/* KPI grid: small, scannable, high signal */}
-        <div className="grid gap-3 md:grid-cols-4">
+        {/* KPI grid: scannable, high-signal metrics */}
+        <div className="grid gap-3 md:grid-cols-6">
           <KpiCard label="Total questions" value={kpis.total} />
           <KpiCard label="Answered" value={kpis.answered} />
           <KpiCard label="Unanswered" value={kpis.unanswered} />
-          <KpiCard label="Completion" value={`${kpis.completionPercent}%`} />
+          <KpiCard label="Correct" value={kpis.correct} />
+          <KpiCard label="Incorrect" value={kpis.incorrect} />
+          <KpiCard label="Accuracy" value={`${kpis.accuracyPercent}%`} />
         </div>
 
         <div className="text-xs text-slate-400 space-y-1">
@@ -251,8 +313,8 @@ const reviewItems = useMemo(() => {
         <header className="space-y-1">
           <h2 className="text-lg font-semibold">Review</h2>
           <p className="text-xs text-slate-400 max-w-2xl">
-            Below is a per-question breakdown. Scoring (correct/incorrect) will be added
-            next using normalization + fuzzy matching.
+            Each item shows your answer versus the expected answer. Correctness is based on
+            normalization + similarity scoring (no semantic AI yet).
           </p>
         </header>
 
@@ -272,11 +334,19 @@ const reviewItems = useMemo(() => {
                   </p>
                 </div>
 
-                {item.isMissingQuestion && (
-                  <span className="rounded-md border border-amber-500/60 px-2 py-1 text-xs text-amber-300">
-                    Missing from bank
+                <div className="flex items-center gap-2">
+                  {item.isMissingQuestion && (
+                    <span className="rounded-md border border-amber-500/60 px-2 py-1 text-xs text-amber-300">
+                      Missing from bank
+                    </span>
+                  )}
+
+                  <StatusBadge status={item.evaluation.status} />
+
+                  <span className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300">
+                    Similarity: {item.evaluation.similarity}%
                   </span>
-                )}
+                </div>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
@@ -326,7 +396,8 @@ const reviewItems = useMemo(() => {
 
 /**
  * KpiCard is a small presentational component.
- * If it grows, we can promote it into /components.
+ * We keep it inside this file to avoid spreading small UI pieces
+ * into many files during the MVP.
  */
 function KpiCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -334,5 +405,37 @@ function KpiCard({ label, value }: { label: string; value: string | number }) {
       <p className="text-xs text-slate-400">{label}</p>
       <p className="text-lg font-semibold text-slate-100">{value}</p>
     </div>
+  );
+}
+
+/**
+ * StatusBadge provides a clean and scannable label for each evaluated answer.
+ * It is intentionally simple and uses a limited set of states.
+ */
+function StatusBadge({
+  status,
+}: {
+  status: "CORRECT" | "INCORRECT" | "UNANSWERED";
+}) {
+  if (status === "CORRECT") {
+    return (
+      <span className="rounded-md border border-emerald-500/60 px-2 py-1 text-xs text-emerald-300">
+        Correct
+      </span>
+    );
+  }
+
+  if (status === "INCORRECT") {
+    return (
+      <span className="rounded-md border border-red-500/60 px-2 py-1 text-xs text-red-300">
+        Incorrect
+      </span>
+    );
+  }
+
+  return (
+    <span className="rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-300">
+      Unanswered
+    </span>
   );
 }
