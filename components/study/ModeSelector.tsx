@@ -50,6 +50,11 @@ export default function ModeSelector() {
             </div>
             <div className="grid gap-4 md:grid-cols-3">
                 <StudyModeCard
+                    title="Read Document"
+                    description="Extract questions from PDF/DOCX"
+                    href="/study/document"
+                />
+                <StudyModeCard
                     title="Manual Questions"
                     description="Create your own exam, learn how"
                     href="/study/manual"
