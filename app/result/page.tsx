@@ -16,6 +16,9 @@ import {
   setActiveTestSession,
 } from "@/features/test-runner/testSessionStorage";
 
+import { extractKeywords } from "@/lib/text/keywordExtraction";
+import { generateSearchLinks, SearchLinks } from "@/lib/text/searchLinks";
+
 import type { Question } from "@/types/question";
 import type { TestSession } from "@/types/testSession";
 
@@ -27,6 +30,7 @@ import type { TestSession } from "@/types/testSession";
  * - Compute KPIs (answered/unanswered + correct/incorrect + accuracy)
  * - Show per-question review (prompt + expected + user answer)
  * - Provide CTAs to retake or clear the session
+ * - Show extracted keywords and learning links
  *
  * Notes:
  * - This page does NOT store anything on the server.
@@ -70,6 +74,7 @@ export default function ResultsPage() {
    * - Stable ordering based on session.questionIds
    * - Includes evaluation status + similarity percent
    * - Handles missing questions gracefully
+   * - Extracts keywords and generates learning links
    */
   const reviewItems = useMemo(() => {
     if (!session) return [];
@@ -83,11 +88,19 @@ export default function ResultsPage() {
         question?.expectedAnswer
           ? evaluateAnswer(userAnswer, expectedAnswer)
           : {
-              status: "UNANSWERED" as const,
-              similarity: 0,
-              normalizedUserAnswer: "",
-              normalizedExpectedAnswer: "",
-            };
+            status: "UNANSWERED" as const,
+            similarity: 0,
+            normalizedUserAnswer: "",
+            normalizedExpectedAnswer: "",
+          };
+
+      // Extract keywords primarily from expected answer, optionally fallback to prompt or user answer could be added
+      const keywords = extractKeywords(expectedAnswer);
+
+      const keywordsWithLinks = keywords.map(keyword => ({
+        keyword,
+        links: generateSearchLinks(keyword)
+      }));
 
       return {
         id,
@@ -97,6 +110,7 @@ export default function ResultsPage() {
         userAnswer,
         evaluation,
         isMissingQuestion: question === null,
+        keywordsWithLinks,
       };
     });
   }, [session, questionById]);
@@ -370,6 +384,52 @@ export default function ResultsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Learning Keywords Section */}
+              {item.keywordsWithLinks.length > 0 && (
+                <div className="pt-2 border-t border-slate-800/50">
+                  <p className="text-xs font-semibold text-slate-400 mb-2">
+                    Key concepts to review:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {item.keywordsWithLinks.map((k) => (
+                      <div key={k.keyword} className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 pl-3 pr-2 py-1 text-xs">
+                        <span className="font-medium text-slate-200">{k.keyword}</span>
+                        <div className="h-3 w-px bg-slate-700 mx-0.5"></div>
+                        <div className="flex gap-1.5 opacity-70">
+                          <a
+                            href={k.links.google}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-400 hover:opacity-100 transition-colors"
+                            title="Search on Google"
+                          >
+                            G
+                          </a>
+                          <a
+                            href={k.links.wikipedia}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-zinc-200 hover:opacity-100 transition-colors"
+                            title="Search on Wikipedia"
+                          >
+                            W
+                          </a>
+                          <a
+                            href={k.links.youtube}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-red-400 hover:opacity-100 transition-colors"
+                            title="Search on YouTube"
+                          >
+                            Y
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>

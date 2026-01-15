@@ -33,7 +33,7 @@ export function buildManualTestSession(questionsIds:string[]) : TestSession{
      */
 export function getActiveTestSession():TestSession |null{
     return loadFromLocalStorage<TestSession | null>(storageKeys.activeTestSession,null)
-    console.log("OIWFJEFIUJFESIFUNJSEUIFNESIFUSENFIUSE");
+
 }
 /**
  * clearActiveTestSession detele the session by overwrite

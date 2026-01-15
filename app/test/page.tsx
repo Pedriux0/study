@@ -8,141 +8,140 @@ import { storageKeys } from "@/lib/storage/storageKeys";
 import type { Question } from "@/types/question";
 import type { TestSession } from "@/types/testSession";
 
-/**This is the page whewre all the test are gonna rin 
+/**This is the page where all the test are gonna run 
  * 
- * - Loading the active seession 
+ * - Loading the active session 
  * - Load manual bank of questions 
  * - Display the current questions and answers
  */
-export default function TestPage(){
-    const router = useRouter();
-    const[session, setSession] = useState<TestSession |null>(null);
-    const [manualBank, setManualBank] = useState<Question[]>([]);
-    const [draftAnswer , setDraftAnswer] = useState("");
+export default function TestPage() {
+  const router = useRouter();
+  const [session, setSession] = useState<TestSession | null>(null);
+  const [manualBank, setManualBank] = useState<Question[]>([]);
+  const [draftAnswer, setDraftAnswer] = useState("");
 
-/**
- * Load: 
- * -Read the acitve session
- * -Read the question bank
- */
-useEffect(()=> {
+  /**
+   * Load: 
+   * -Read the active session
+   * -Read the question bank
+   */
+  useEffect(() => {
     const active = getActiveTestSession();
-    if(!active){
-        //No active session => send user to entry point 
-        //
-        router.push("/study/manual");
-        return;
+    if (!active) {
+      //No active session => send user to entry point 
+      //
+      router.push("/study/manual");
+      return;
 
     }
     setSession(active);
-    
-       const bank = loadFromLocalStorage<Question[]>(storageKeys.manualQuestionBank, []);
+
+    const bank = loadFromLocalStorage<Question[]>(storageKeys.manualQuestionBank, []);
     setManualBank(bank);
   }, [router]);
   /**(
    * Build an index of questions for lookup
   ) */
-  const questionById = useMemo(()=> {
-    const map = new Map<string ,Question>();
-    for(const q of manualBank) map.set(q.id,q);
+  const questionById = useMemo(() => {
+    const map = new Map<string, Question>();
+    for (const q of manualBank) map.set(q.id, q);
     return map;
-  },[manualBank]);
+  }, [manualBank]);
   /**
-   * Get the current qustion based on the index
+   * Get the current question based on the index
    */
-  const currentQuestion = useMemo(()=>{
-    if(!session){
-        return null;
+  const currentQuestion = useMemo(() => {
+    if (!session) {
+      return null;
     }
     const currentId = session.questionsIds[session.currentIndex];
-    if(!currentId) return null;
+    if (!currentId) return null;
     return questionById.get(currentId) ?? null;
-  },[session,questionById]);
+  }, [session, questionById]);
 
-/**
- * Where the current question changes load the anser into the new one 
- */
-useEffect(()=>{
-    if(!session|| !currentQuestion) return;
+  /**
+   * Where the current question changes load the answer into the new one 
+   */
+  useEffect(() => {
+    if (!session || !currentQuestion) return;
 
     const currentAnswer = session.answersByQuestions[currentQuestion.id] ?? "";
     setDraftAnswer(currentAnswer);
-},[session,currentQuestion]);
-/**
- * lastAnswer writes the current draftg answe in the session objects and save it 
- * This the core component for the test runner
- * check twice for common errros 
- */
-function lastAnswer(nextIndex?: number){
-    if(!session || !currentQuestion){
-        return null;
+  }, [session, currentQuestion]);
+  /**
+   * lastAnswer writes the current draft answer in the session objects and save it 
+   * This the core component for the test runner
+   * check twice for common errros 
+   */
+  function lastAnswer(nextIndex?: number) {
+    if (!session || !currentQuestion) {
+      return null;
     }
-   // Keep existing answers and add/update the current one
-const updatedAnswers = {
-  ...session.answersByQuestions,
-  [currentQuestion.id]: draftAnswer,
-};
+    // Keep existing answers and add/update the current one
+    const updatedAnswers = {
+      ...session.answersByQuestions,
+      [currentQuestion.id]: draftAnswer,
+    };
 
     const updated: TestSession = {
-    ...session,
-    answersByQuestions: updatedAnswers,
-    currentIndex: typeof nextIndex === "number" ? nextIndex : session.currentIndex,
+      ...session,
+      answersByQuestions: updatedAnswers,
+      currentIndex: typeof nextIndex === "number" ? nextIndex : session.currentIndex,
     };
     setSession(updated);
     setActiveTestSession(updated);
+  }
+  //handleNext is the one who get the next answer if there is a session and push it to the user updating it
+  function handleNext() {
+    if (!session) {
+      return;
     }
-    //handleNext is the one who get the next answer if there is a session and push it to the user updating it
-    function handleNext()
-    {
-        if(!session){
-            return;
-        }
-        const nextIndex= Math.min(session.currentIndex+ 1 , session.questionsIds.length -1)
-        lastAnswer(nextIndex);
-    }
-    //handleback return the last index of the answer ( answer)
-    function handleback(){
-        if(!session) return null;
-        const previousIndex = Math.max(session.currentIndex -1,0);
-        lastAnswer(previousIndex);
-    }
-    //handleFinish check the last and mark it as finished
-    function handleFinish(){
-        if(!session) return null;
-        const finished: TestSession = {
-            id: session.id,
-            source: session.source,
-            questionsIds: session.questionsIds,
-            answersByQuestions: {
-                ...session.answersByQuestions,
-                ...(currentQuestion ? { [currentQuestion.id]: draftAnswer } : {}),
-            },
-            currentIndex: session.currentIndex,
-            startedAtIso: session.startedAtIso,
-            finishedAtIso: new Date().toISOString(),
-        };
-        setActiveTestSession(finished);
-        setSession(finished);
-        router.push("/result");
-    }
+    const nextIndex = Math.min(session.currentIndex + 1, session.questionsIds.length - 1)
+    lastAnswer(nextIndex);
+  }
+  //handleback return the last index of the answer ( answer)
+  function handleback() {
+    if (!session) return null;
+    const previousIndex = Math.max(session.currentIndex - 1, 0);
+    lastAnswer(previousIndex);
+  }
+  //handleFinish check the last and mark it as finished
+  function handleFinish() {
+    if (!session) return null;
+    const finished: TestSession = {
+      id: session.id,
+      source: session.source,
+      questionsIds: session.questionsIds,
+      answersByQuestions: {
+        ...session.answersByQuestions,
+        ...(currentQuestion ? { [currentQuestion.id]: draftAnswer } : {}),
+      },
+      currentIndex: session.currentIndex,
+      startedAtIso: session.startedAtIso,
+      finishedAtIso: new Date().toISOString(),
+    };
+    setActiveTestSession(finished);
+    setSession(finished);
+    router.push("/result");
+  }
 
-    function handleExit(){
-        clearActiveTestSession();
-        router.push("/study/manual");
-    }
+  function handleExit() {
+    clearActiveTestSession();
+    router.push("/study/manual");
+  }
 
-    // show a light loading state until we have session and questions
-    if(!session || manualBank.length === 0){
-        return (
-            <div className="space-y-2">
-                <p className="text-sm text-slate-300">Loading test session...</p>
-            </div>
-        );
-    }
+  // show a light loading state until we have session and questions
+  if (!session || manualBank.length === 0) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-slate-300">Loading test session...</p>
+      </div>
+    );
+  }
 
-    if(!currentQuestion){
-        return(
-        <div className="space-y-4">
+  if (!currentQuestion) {
+    return (
+      <div className="space-y-4">
         <h1 className="text-2xl font-semibold">Test</h1>
         <p className="text-sm text-slate-300">
           We could not load the current question. This can happen if the manual question bank
@@ -158,12 +157,12 @@ const updatedAnswers = {
             Return to manual mode
           </button>
         </div>
-        </div>
-        );
-    }
-    const total = session.questionsIds.length;
-    const indexH = session.currentIndex + 1;
-     return (
+      </div>
+    );
+  }
+  const total = session.questionsIds.length;
+  const indexH = session.currentIndex + 1;
+  return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Test</h1>
