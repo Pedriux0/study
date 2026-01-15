@@ -1,0 +1,40 @@
+
+> study@0.1.0 build
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\juanp\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\juanp\OneDrive\Documentos\study\package-lock.json
+
+   ▲ Next.js 16.0.8 (Turbopack)
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1890.8ms
+   Running TypeScript ...
+   Collecting page data using 19 workers ...
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- C:\ROOT\OneDrive\Documentos\study\node_modules\pdf-parse\dist\pdf-parse\cjs\index.cjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `ImageData`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+ReferenceError: DOMMatrix is not defined
+    at module evaluation (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[root-of-the-server]__bfc42128._.js:2:117900)
+    at instantiateModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.commonJsRequire [as r] (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:249:12)
+    at module evaluation (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[root-of-the-server]__bfc42128._.js:7:8273)
+    at instantiateModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (C:\Users\juanp\OneDrive\Documentos\study\.next\server\app\api\documents\extract\route.js:6:3)
+
+> Build error occurred
+Error: Failed to collect page data for /api/documents/extract
+    at ignore-listed frames {
+  type: 'Error'
+}

@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Self-Study Platform (MVP)
+
+A local-first, privacy-focused application for self-guided learning and testing. 
+Designed to run entirely in the browser using Next.js, with zero server-side persistence of personal data.
+
+## Problems Solved
+- **Privacy**: Study data (questions, answers, document text) never leaves your machine.
+- **Focus**: A clean, distraction-free environment for reading and testing.
+- **Flexibility**: Create your own questions or extract them from your study documents (PDF/DOCX).
+
+## Features
+- **Manual Mode**: Create and manage your own bank of questions.
+- **Demo Mode**: Try the platform with a pre-loaded "General Knowledge" question set.
+- **Document Mode**: Upload PDF/DOCX files to read text and instantly create questions.
+- **Test Runner**: Take quizzes with immediate feedback and scoring.
+- **Results & Review**: See detailed KPIs (Accuracy, Completion) and review answers with auto-generated learning links (Google, Wikipedia, YouTube).
+
+## Philosophy
+- **Local-First**: All application state uses `localStorage`. The server is stateless, used only for document text extraction routes.
+- **No AI / No LLMs**: This project uses deterministic logic (Levenshtein distance) for string comparison and similarity scoring. It is fast, predictable, and runs offline.
+
+## Architecture
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Data Persistence**: Browser `localStorage`
+
+### Key Directories
+- `app/`: Next.js App Router pages and API routes.
+- `components/`: UI building blocks (using functional React components).
+- `features/`: Core business logic (Question Bank, Test Runner).
+- `lib/`: Utilities for text processing, storage, and configuration.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- npm
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Installation
+1. Clone the repository.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Recent Changes & Improvements
+- **Document Reading**: Added support for uploading and extracting text from PDF and DOCX files.
+- **Keyword Extraction**: Implemented deterministic keyword extraction to identify key concepts in questions.
+- **Learning Links**: Automatically generated search links (Google, Wikipedia, YouTube) for extracted keywords.
+- **Codebase Polish**: Standardized interfaces, fixed types, and resolved build dependencies for Node.js environments.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Future Improvements (Roadmap)
+While this MVP is feature-complete, future iterations could include:
+- **AI Integration**: Replace deterministic keyword extraction with LLM-based analysis for deeper insights.
+- **Cloud Persistence**: Add optional server-side storage to sync progress across devices.
+- **Spaced Repetition**: Implement an algorithm (e.g., SM-2) to schedule reviews based on performance.
+- **Mobile Support**: Adapt the UI for a native-like experience on mobile devices.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+MIT License. See [LICENSE](LICENSE) for details.

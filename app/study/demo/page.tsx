@@ -12,31 +12,36 @@ const DEMO_QUESTIONS: Question[] = [
         id: "demo_1",
         prompt: "What is the capital of France?",
         expectedAnswer: "Paris",
-        createdAtIso: new Date().toISOString(),
+        type: "open-text",
+        source: "demo",
     },
     {
         id: "demo_2",
         prompt: "Who wrote 'Romeo and Juliet'?",
         expectedAnswer: "William Shakespeare",
-        createdAtIso: new Date().toISOString(),
+        type: "open-text",
+        source: "demo",
     },
     {
         id: "demo_3",
         prompt: "What is 2 + 2?",
         expectedAnswer: "4",
-        createdAtIso: new Date().toISOString(),
+        type: "open-text",
+        source: "demo",
     },
     {
         id: "demo_4",
         prompt: "What is the largest planet in our solar system?",
         expectedAnswer: "Jupiter",
-        createdAtIso: new Date().toISOString(),
+        type: "open-text",
+        source: "demo",
     },
     {
         id: "demo_5",
         prompt: "What is the chemical symbol for Gold?",
         expectedAnswer: "Au",
-        createdAtIso: new Date().toISOString(),
+        type: "open-text",
+        source: "demo",
     }
 ];
 

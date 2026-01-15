@@ -1,0 +1,39 @@
+
+> study@0.1.0 build
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\juanp\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\juanp\OneDrive\Documentos\study\package-lock.json
+
+   ▲ Next.js 16.0.8 (Turbopack)
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 4.1s
+   Running TypeScript ...
+   Collecting page data using 19 workers ...
+Error: ENOENT: no such file or directory, open 'C:\Users\juanp\OneDrive\Documentos\study\test\data\05-versions-space.pdf'
+    at module evaluation (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[root-of-the-server]__7cf71aa4._.js:3:162)
+    at instantiateModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.commonJsRequire [as r] (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:249:12)
+    at module evaluation (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[root-of-the-server]__7cf71aa4._.js:3:588)
+    at instantiateModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (C:\Users\juanp\OneDrive\Documentos\study\.next\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (C:\Users\juanp\OneDrive\Documentos\study\.next\server\app\api\documents\extract\route.js:6:3) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\juanp\\OneDrive\\Documentos\\study\\test\\data\\05-versions-space.pdf'
+}
+
+> Build error occurred
+Error: Failed to collect page data for /api/documents/extract
+    at ignore-listed frames {
+  type: 'Error'
+}
