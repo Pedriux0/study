@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useManualQuestionBank } from "@/features/manual-questions/useManualQuestionBank";
+import mammoth from "mammoth";
 
 interface ExtractedData {
     text: string;
@@ -12,18 +13,15 @@ interface ExtractedData {
 }
 
 /**
- * DocumentStudyPage Component
+ * DocumentStudyPage Component (Client-Side Version)
  * 
- * The main interface for the "Document Reading" feature.
+ * Adapted for GitHub Pages (Static Export).
+ * Removing server-side API dependencies.
  * 
- * Flows:
- * 1. Upload: User selects PDF/DOCX -> POST /api/documents/extract
- * 2. Review: Extracted text is shown in a scrollable pane.
- * 3. Create: User reads text and manually adds questions to the bank.
- * 
- * State:
- * - Local state handles the file upload and text review.
- * - 'useManualQuestionBank' hook handles syncing questions to localStorage.
+ * Capabilities:
+ * - DOCX: Handled via 'mammoth' in browser.
+ * - PDF: Not supported in static version (requires heavy worker).
+ * - TXT/MD: Handled via FileReader.
  */
 export default function DocumentStudyPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -44,25 +42,39 @@ export default function DocumentStudyPage() {
         setIsUploading(true);
         setError(null);
 
-        const formData = new FormData();
-        formData.append("file", file);
-
         try {
-            const res = await fetch("/api/documents/extract", {
-                method: "POST",
-                body: formData,
-            });
+            const arrayBuffer = await file.arrayBuffer();
+            let text = "";
 
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || "Failed to extract text");
+            if (file.name.endsWith(".docx")) {
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                text = result.value;
+            } else if (file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".md")) {
+                text = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target?.result as string);
+                    reader.onerror = (e) => reject(e);
+                    reader.readAsText(file);
+                });
+            } else if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+                throw new Error("PDF parsing is not supported in the live demo version. Please use DOCX or TXT.");
+            } else {
+                throw new Error("Unsupported file type. Please use DOCX or TXT.");
             }
 
-            const data = await res.json();
-            setExtracted(data);
+            // Sanitize
+            const sanitized = text.replace(/\s+/g, " ").trim();
+
+            setExtracted({
+                text: sanitized,
+                characterCount: sanitized.length,
+                fileName: file.name,
+                fileType: file.type
+            });
+
         } catch (err) {
             console.error(err);
-            setError(err instanceof Error ? err.message : "Unknown error");
+            setError(err instanceof Error ? err.message : "Failed to extract text");
         } finally {
             setIsUploading(false);
         }
@@ -119,7 +131,7 @@ export default function DocumentStudyPage() {
                                 hover:file:bg-slate-700"
                         />
                         <p className="text-xs text-slate-500">
-                            Supported formats: PDF, DOCX (Max 4MB recommended)
+                            Supported formats: DOCX, TXT (PDF disabled in demo)
                         </p>
                     </div>
 
